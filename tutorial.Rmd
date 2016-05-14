@@ -20,8 +20,7 @@ options(scipen=999)
 ```
 
 ```{r}
-cars.df <- read.csv("kelly_blue_book_2005.csv",
-                    header = TRUE, stringsAsFactors = TRUE)
+cars.df <- read.csv("kelly_blue_book_2005.csv", header = TRUE, stringsAsFactors = TRUE)
 head(cars.df)
 ```
 
@@ -32,12 +31,11 @@ The goal of a tree is to split the data into groups that are similar with respec
 The regression tree below was grown using Pontiacs from our used car dataset.
 
 ```{r, fig.width=10}
-pontiac.df <- subset(cars.df, Make=="Pontiac")
+pontiac.df <- subset(cars.df, Make == "Pontiac")
 one_tree <- ctree(Price ~ Mileage + Type + Cylinder + Doors + Cruise + Sound + Leather, 
                   data = pontiac.df, 
-                  controls = ctree_control(maxdepth=3))
-plot(one_tree, 
-     inner_panel=node_inner(one_tree, pval = FALSE, id = FALSE))
+                  controls = ctree_control(maxdepth = 3))
+plot(one_tree, inner_panel = node_inner(one_tree, pval = FALSE, id = FALSE))
 ```
 
 We can see that the regression tree has successfully split Pontiacs into groups with different prices.  For example, Pontiacs with > 6 cylinders and of type coupe (in Node 10) had prices around $30,000, but Pontiacs with <= 6 cylinders, <= 4 cylinders, and <= 2 doors (in Node 4) had prices around $12,500.  Notice that the tree split twice on the same variable, cylinder, which is okay.
@@ -59,7 +57,7 @@ $$ SSE = \sum\nolimits_{i \in S_1} (y_i - \bar{y}_1)^2 + \sum\nolimits_{i \in S_
 Let's look at how CART would choose the best split for mileage on a group of Buick Lacrosses.
 
 ```{r, fig.height=3}
-lacrosse.df <- subset(cars.df, Model=="Lacrosse")
+lacrosse.df <- subset(cars.df, Model == "Lacrosse")
 ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) + 
         geom_point() + theme_bw()
 ```
@@ -83,7 +81,7 @@ for(i in 1:n_cars){
     SSE.df$SSE[i] <- sum((group1.df$Price - SSE.df$group1_mean[i])^2) + 
         sum((group2.df$Price - SSE.df$group2_mean[i])^2)
 }
-ggplot(SSE.df, aes(x=Mileage, y=SSE/1000000)) + geom_line() + theme_bw()
+ggplot(SSE.df, aes(x = Mileage, y = SSE/1000000)) + geom_line() + theme_bw()
 ```
 
 We obtain the minimum sum of squares error when we split on mileage <= 19,467.
@@ -92,15 +90,15 @@ Let's see what this split looks like. The predictions for the two groups are in 
 
 ```{r, fig.height=3}
 best_split.df <- SSE.df[which.min(SSE.df$SSE),]
-average1.df <- data.frame(x=c(-Inf, best_split.df$Mileage), 
-                          y=rep(best_split.df$group1_mean, 2))
-average2.df <- data.frame(x=c(best_split.df$Mileage, Inf), 
-                          y=rep(best_split.df$group2_mean, 2))
-ggplot(lacrosse.df, aes(y=Price/1000, x=Mileage)) + 
+average1.df <- data.frame(x = c(-Inf, best_split.df$Mileage), 
+                          y = rep(best_split.df$group1_mean, 2))
+average2.df <- data.frame(x = c(best_split.df$Mileage, Inf), 
+                          y = rep(best_split.df$group2_mean, 2))
+ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) + 
         geom_point() + theme_bw() + 
-        geom_vline(xintercept=best_split.df$Mileage) +
-        geom_line(data=average1.df, aes(x=x, y=y/1000), color="red") +
-        geom_line(data=average2.df, aes(x=x, y=y/1000), color="red")
+        geom_vline(xintercept = best_split.df$Mileage) +
+        geom_line(data = average1.df, aes(x = x, y = y/1000), color = "red") +
+        geom_line(data = average2.df, aes(x = x, y = y/1000), color = "red")
 ```
 
 There's a second commonly used method for choosing the best split.
@@ -124,3 +122,8 @@ The solution to several of the problems with single trees is an ensemble model, 
 
 # Random Forest
 
+# Acknowledgements
+
+* Data is from Kelly Blue Book and can be found here: http://www.amstat.org/publications/jse/v16n3/datasets.kuiper.html
+
+* Many concepts in this tutorial come from Applied Predictive Modeling by Kjell Johnson and Max Kuhn, which I highly recommend for more in-depth understanding of regression tree models 

@@ -11,8 +11,7 @@ We'll be using an example dataset from Kelly Blue Book 2005 to predict the price
 
 
 ```r
-cars.df <- read.csv("kelly_blue_book_2005.csv",
-                    header = TRUE, stringsAsFactors = TRUE)
+cars.df <- read.csv("kelly_blue_book_2005.csv", header = TRUE, stringsAsFactors = TRUE)
 head(cars.df)
 ```
 
@@ -41,12 +40,11 @@ The regression tree below was grown using Pontiacs from our used car dataset.
 
 
 ```r
-pontiac.df <- subset(cars.df, Make=="Pontiac")
+pontiac.df <- subset(cars.df, Make == "Pontiac")
 one_tree <- ctree(Price ~ Mileage + Type + Cylinder + Doors + Cruise + Sound + Leather, 
                   data = pontiac.df, 
-                  controls = ctree_control(maxdepth=3))
-plot(one_tree, 
-     inner_panel=node_inner(one_tree, pval = FALSE, id = FALSE))
+                  controls = ctree_control(maxdepth = 3))
+plot(one_tree, inner_panel = node_inner(one_tree, pval = FALSE, id = FALSE))
 ```
 
 ![](tutorial_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
@@ -71,7 +69,7 @@ Let's look at how CART would choose the best split for mileage on a group of Bui
 
 
 ```r
-lacrosse.df <- subset(cars.df, Model=="Lacrosse")
+lacrosse.df <- subset(cars.df, Model == "Lacrosse")
 ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) + 
         geom_point() + theme_bw()
 ```
@@ -98,7 +96,7 @@ for(i in 1:n_cars){
     SSE.df$SSE[i] <- sum((group1.df$Price - SSE.df$group1_mean[i])^2) + 
         sum((group2.df$Price - SSE.df$group2_mean[i])^2)
 }
-ggplot(SSE.df, aes(x=Mileage, y=SSE/1000000)) + geom_line() + theme_bw()
+ggplot(SSE.df, aes(x = Mileage, y = SSE/1000000)) + geom_line() + theme_bw()
 ```
 
 ![](tutorial_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
@@ -110,15 +108,15 @@ Let's see what this split looks like. The predictions for the two groups are in 
 
 ```r
 best_split.df <- SSE.df[which.min(SSE.df$SSE),]
-average1.df <- data.frame(x=c(-Inf, best_split.df$Mileage), 
-                          y=rep(best_split.df$group1_mean, 2))
-average2.df <- data.frame(x=c(best_split.df$Mileage, Inf), 
-                          y=rep(best_split.df$group2_mean, 2))
-ggplot(lacrosse.df, aes(y=Price/1000, x=Mileage)) + 
+average1.df <- data.frame(x = c(-Inf, best_split.df$Mileage), 
+                          y = rep(best_split.df$group1_mean, 2))
+average2.df <- data.frame(x = c(best_split.df$Mileage, Inf), 
+                          y = rep(best_split.df$group2_mean, 2))
+ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) + 
         geom_point() + theme_bw() + 
-        geom_vline(xintercept=best_split.df$Mileage) +
-        geom_line(data=average1.df, aes(x=x, y=y/1000), color="red") +
-        geom_line(data=average2.df, aes(x=x, y=y/1000), color="red")
+        geom_vline(xintercept = best_split.df$Mileage) +
+        geom_line(data = average1.df, aes(x = x, y = y/1000), color = "red") +
+        geom_line(data = average2.df, aes(x = x, y = y/1000), color = "red")
 ```
 
 ![](tutorial_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
@@ -144,3 +142,8 @@ The solution to several of the problems with single trees is an ensemble model, 
 
 # Random Forest
 
+# Acknowledgements
+
+* Data is from Kelly Blue Book and can be found here: http://www.amstat.org/publications/jse/v16n3/datasets.kuiper.html
+
+* Many concepts in this tutorial come from Applied Predictive Modeling by Kjell Johnson and Max Kuhn, which I highly recommend for more in-depth understanding of regression tree models 
