@@ -3,7 +3,7 @@ Lauren Savage
 May 10, 2016  
 
 ### Table of Contents
-[Choosing Splits](#Choosing-Splits)
+[Choosing Splits](###Choosing-Splits)
 
 Classification models predict categorical responses (e.g. success/failure), whereas regression models predict continuous responses.
 
