@@ -1,16 +1,7 @@
 # Regression Tree Models Tutorial
 Lauren Savage  
-May 10, 2016  
 
-### Table of Contents
-
-* [Example Regression Tree](#example-regression-tree)
-
-* [Choosing Splits](#choosing-splits)
-
-* [Regression Trees vs Linear Regression](#regression-trees-vs-linear-regression)
-
-* [Random Forest](#random-forest)
+# Regression Trees
 
 Classification models predict categorical responses (e.g. success/failure), whereas regression models predict continuous responses.
 
@@ -44,7 +35,7 @@ head(cars.df)
 
 The goal of a tree is to split the data into groups that are similar with respect to the response.  This is done by creating binary splits one variable at a time.
 
-### Example Regression Tree
+## Example Regression Tree
 
 The regression tree below was grown using Pontiacs from our used car dataset.
 
@@ -64,11 +55,13 @@ We can see that the regression tree has successfully split Pontiacs into groups 
 
 This tree can be used to predict the prices of new records by following the splits to the corresponding terminal nodes.  The prediction is the average price of cars in the terminal node.  For example, this tree will predict that any sedans with > 6 cylinders have a price of $22,578.
 
-### Choosing Splits
+## Choosing Splits
 
 At each node, the tree-building algorithm searches through each variable for the "best" split and then chooses the "best" variable to split on, where the definition of "best" depends on the methodology.
 
-* **CART**, implemented in the rpart package
+### CART
+
+(Implemented in the rpart package.)
 
 The best split minimizes the sum of squares error.  This is a way of quanitifying how far the true responses are from the predicted response, the average at each node. The formula for sum of squares error is:
 
@@ -132,11 +125,13 @@ ggplot(lacrosse.df, aes(y=Price/1000, x=Mileage)) +
 
 There's a second commonly used method for choosing the best split.
 
-* **Conditional Inference**, implemented in the party package
+### Conditional Inference
+
+(Implemented in the party package.)
 
 This algorithm conducts statistical tests for each possible split and chooses the best split as the one with the smallest p-value.
 
-### Regression Trees vs Linear Regression
+## Regression Trees vs Linear Regression
 
 Let's take a moment to consider the advantages and disadvantages of single regression trees compared to another popular approach, linear regression.
 
@@ -147,5 +142,5 @@ Let's take a moment to consider the advantages and disadvantages of single regre
 
 The solution to several of the problems with single trees is an ensemble model, such as...
 
-### Random Forest
+# Random Forest
 
