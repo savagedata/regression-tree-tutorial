@@ -121,7 +121,7 @@ ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) +
 
 ![](tutorial_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
-There's a second commonly used method for choosing the best split.
+There's a second commonly used method for choosing the best split...
 
 ### Conditional Inference
 
@@ -142,8 +142,174 @@ The solution to several of the problems with single trees is an ensemble model, 
 
 # Random Forest
 
+What if we could average together many different regression trees to get a more stable, nuanced model?
+
+## Bagged Regression Trees
+
+Bagging is short for **b**ootstrap **agg**regation.  This is an ensemble method wherein many different trees are grown using bootstrap samples of the original dataset.  (Bootstrap sampling is just random sampling *with* replacement.)  Predictions of each tree are averaged to create aggregate predictions.  Averaging together creates predictions with lower variance than predictions from a single tree.
+
+Let's create our own bagged model with 4 trees (typically you would grow many more trees).  We'll set aside the first row of our dataset to make predictions on.
+
+
+
+```r
+(cars_first.df <- cars.df[1,])
+```
+
+```
+##     Price Mileage  Make   Model     Trim  Type Cylinder Liter Doors Cruise
+## 1 17314.1    8221 Buick Century Sedan 4D Sedan        6   3.1     4      1
+##   Sound Leather
+## 1     1       1
+```
+
+```r
+cars_minus_first.df <- cars.df[-1,]
+n_samples <- nrow(cars_minus_first.df)
+n_trees <- 4
+predictions <- numeric(n_trees)
+set.seed(235)
+for(i in 1:n_trees){
+    cars_bootstrap.df <- cars_minus_first.df[sample(1:n_samples, n_samples, replace = TRUE),]
+    one_tree <- ctree(Price ~ Mileage + Make + Model + Trim + Type + Cylinder + 
+                          Liter + Doors + Cruise + Sound + Leather, 
+                  data = cars_bootstrap.df, 
+                  controls = ctree_control(maxdepth = 4))
+    plot(one_tree, type="simple", 
+         inner_panel=node_inner(one_tree, pval = FALSE, id = FALSE), 
+         terminal_panel=node_terminal(one_tree, digits = 0, fill = c("white"), id = FALSE))
+    predictions[i] <- predict(one_tree, cars_first.df)
+    print(paste("Prediction of single tree for the held out record:", format(predictions[i], digits=0)))
+}
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+```
+## [1] "Prediction of single tree for the held out record: 15117"
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-7-2.png)<!-- -->
+
+```
+## [1] "Prediction of single tree for the held out record: 15729"
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-7-3.png)<!-- -->
+
+```
+## [1] "Prediction of single tree for the held out record: 15918"
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-7-4.png)<!-- -->
+
+```
+## [1] "Prediction of single tree for the held out record: 13287"
+```
+
+You can follow each tree to see why it's making the prediction it is.  To get the aggregate prediction, we average together all 4 values:
+
+
+```r
+mean(predictions)
+```
+
+```
+## [1] 15012.78
+```
+
+The real price was $17,314, but our prediction was $15,012.  Maybe we can still improve the bagged model...
+
+## Random Forest
+
+Notice that the structure of the above trees is the same.  Each tree splits on Model first because it's the most important variable.  Because Model dominates, it's hard for our trees to learn from any other variables.  These trees are highly correlated, so we haven't taken full advantage of aggregation to make a more stable model.
+
+Random forest introduces another element of randomness.  At each split, only some variables are considered for splitting. In our example, this means Model won't always be the first split.
+
+
+
+
+```r
+set.seed(903)
+cars.rf <- cforest(Price ~ Mileage + Make + Model + Trim + Type + Cylinder + 
+                          Liter + Doors + Cruise + Sound + Leather, 
+                  data = cars_minus_first.df, 
+                  controls = cforest_control(ntree = n_trees, maxdepth = 4))
+for(i in 1:n_trees){
+    one_tree <- get_cTree(cars.rf, i) #see Acknowledgements section
+    plot(one_tree, type="simple", 
+         inner_panel=node_inner(one_tree, pval = FALSE, id = FALSE), 
+         terminal_panel=node_terminal(one_tree, digits = 0, fill = c("white"), id = FALSE))    
+}
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-10-1.png)<!-- -->![](tutorial_files/figure-html/unnamed-chunk-10-2.png)<!-- -->![](tutorial_files/figure-html/unnamed-chunk-10-3.png)<!-- -->![](tutorial_files/figure-html/unnamed-chunk-10-4.png)<!-- -->
+
+Notice how different each of these trees are! 
+
+
+```r
+predict(cars.rf, cars_first.df, OOB=TRUE)
+```
+
+```
+##         Price
+## [1,] 16668.64
+```
+
+Our random forest predicts that the price of the first record will be $16,668.
+
+## Out-of-bag (OOB) Samples
+
+One advantage of bagged trees and random forest is that each tree is grown using only a subset of the original dataset.  On average, about 63% of records in the original dataset end up in a bootstrap sample.  Because the other 37% (the out-of-bag samples) aren't seen by the tree at all, they can be used to produce performance metric for that tree.
+
+Let's see how this works with a single bagged tree. 
+
+
+```r
+# create bootstrap sample and out-of-bag sample
+n_samples <- nrow(cars.df)
+set.seed(348)
+bootstrap_index <- sample(1:n_samples, n_samples, replace = TRUE)
+cars_bootstrap.df <- cars.df[bootstrap_index,]
+cars_oob.df <- cars.df[-bootstrap_index,]
+# grow tree
+one_tree <- ctree(Price ~ Mileage + Make + Model + Trim + Type + Cylinder + 
+                      Liter + Doors + Cruise + Sound + Leather, 
+                  data = cars_bootstrap.df, 
+                  controls = ctree_control(maxdepth = 4))
+# find percent oob sample
+nrow(cars_oob.df)/n_samples
+```
+
+```
+## [1] 0.3731343
+```
+
+The OOB sample is 37% of the original dataset, as we expected.
+
+Now we can predict the price of each OOB sample and calculate a performance metric for that tree.  We'll use root mean square error.
+
+
+```r
+sqrt(sum((predict(one_tree, cars_oob.df) - cars_oob.df$Price)^2)/nrow(cars_oob.df))
+```
+
+```
+## [1] 2363.479
+```
+
+This is the root mean square error for a single tree.  If we had an entire bagged tree model or random forest, we could aggregate the performance metrics of the individual trees to get an estimate of the performance of the forest.  
+
+This estimate would be useful if we wanted to compare different models...
+
+## Tuning Parameters
+
+
 # Acknowledgements
 
 * Data is from Kelly Blue Book and can be found here: http://www.amstat.org/publications/jse/v16n3/datasets.kuiper.html
 
 * Many concepts in this tutorial come from Applied Predictive Modeling by Kjell Johnson and Max Kuhn, which I highly recommend for more in-depth understanding of regression tree models 
+
+* Code for grabbing individual trees from cforest() was taken from Marco Sandri: http://stackoverflow.com/questions/19924402/cforest-prints-empty-tree
