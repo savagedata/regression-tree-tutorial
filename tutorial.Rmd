@@ -2,7 +2,9 @@
 title: "Regression Tree Models Tutorial"
 author: "Lauren Savage"
 date: "May 10, 2016"
-output: html_document
+output: 
+    html_document:
+        keep_md: true
 ---
 
 Classification models predict categorical responses (e.g. success/failure), whereas regression models predict continuous responses.
