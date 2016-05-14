@@ -3,10 +3,14 @@ Lauren Savage
 May 10, 2016  
 
 ### Table of Contents
-[Example Regression Tree](#example-regression-tree)
-[Choosing Splits](#choosing-splits)
-[Regression Trees vs Linear Regression](#regression-trees-vs-linear-regression)
-[Random Forest](#random-forest)
+
+* [Example Regression Tree](#example-regression-tree)
+
+* [Choosing Splits](#choosing-splits)
+
+* [Regression Trees vs Linear Regression](#regression-trees-vs-linear-regression)
+
+* [Random Forest](#random-forest)
 
 Classification models predict categorical responses (e.g. success/failure), whereas regression models predict continuous responses.
 
