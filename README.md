@@ -12,9 +12,6 @@ Lauren Savage
  * [Random Forest](#random-forest-1)
  * [Out-of-bag (OOB) Samples](#out-of-bag-oob-samples)
  * [Tuning Parameters](#tuning-parameters)
-  * [mtry](#mtry)
-  * [maxdepth](#maxdepth)
-  * [ntree](#ntree)
 * [Summary](#summary)
 * [Acknowledgements](#acknowledgements)
 
