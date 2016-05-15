@@ -1,6 +1,23 @@
 # Regression Tree Models Tutorial
 Lauren Savage  
 
+[Regression Trees](#regression-trees)
+[Example Regression Tree](#example-regression-tree)
+[Choosing Splits](#choosing-splits)
+[CART](#cart)
+[Conditional Inference](#conditional-inference)
+[Regression Trees vs Linear Regression](#regression-trees-vs-linear-regression)
+[Random Forest](#random-forest)
+[Bagged Regression Trees](#bagged-regression-trees)
+[Random Forest](#random-forest-1)
+[Out-of-bag (OOB) Samples](#out-of-bag-oob-samples)
+[Tuning Parameters](#tuning-parameters)
+[mtry](#mtry)
+[maxdepth](#maxdepth)
+[ntree](#ntree)
+[Summary](#summary)
+[Acknowledgements](#acknowledgements)
+
 # Regression Trees
 
 Classification models predict categorical responses (e.g. success/failure), whereas regression models predict continuous responses.
@@ -83,19 +100,26 @@ Let's calculate the sum of squares error for each potential split on mileage.
 
 ```r
 n_cars <- nrow(lacrosse.df)
+# The potential splits are all the values of Mileage found in the dataset.
+# Create dataframe to store all potential splits, their associated sum of squares
+# error (SSE), and the predictions for the left and right groups after the split.
 SSE.df <- data.frame(Mileage = sort(lacrosse.df$Mileage), 
                      SSE = numeric(n_cars), 
-                     group1_mean = numeric(n_cars), 
-                     group2_mean = numeric(n_cars))
+                     left_mean = numeric(n_cars), 
+                     right_mean = numeric(n_cars))
 for(i in 1:n_cars){
     mileage <- SSE.df$Mileage[i]
-    group1.df <- lacrosse.df[lacrosse.df$Mileage <= mileage,]
-    group2.df <- lacrosse.df[lacrosse.df$Mileage > mileage,]
-    SSE.df$group1_mean[i] <- mean(group1.df$Price)
-    SSE.df$group2_mean[i] <- mean(group2.df$Price)
-    SSE.df$SSE[i] <- sum((group1.df$Price - SSE.df$group1_mean[i])^2) + 
-        sum((group2.df$Price - SSE.df$group2_mean[i])^2)
+    # split cars into left and right groups by mileage
+    left.df <- lacrosse.df[lacrosse.df$Mileage <= mileage,]
+    right.df <- lacrosse.df[lacrosse.df$Mileage > mileage,]
+    # calculate left and right predictions/means
+    SSE.df$left_mean[i] <- mean(left.df$Price)
+    SSE.df$right_mean[i] <- mean(right.df$Price)
+    # calculate sum of squares error
+    SSE.df$SSE[i] <- sum((left.df$Price - SSE.df$left_mean[i])^2) + 
+        sum((right.df$Price - SSE.df$right_mean[i])^2)
 }
+# plot the SSE for each split on mileage
 ggplot(SSE.df, aes(x = Mileage, y = SSE/1000000)) + geom_line() + theme_bw()
 ```
 
@@ -107,16 +131,18 @@ Let's see what this split looks like. The predictions for the two groups are in 
 
 
 ```r
+# the best split is the mileage with the minimum SSE
 best_split.df <- SSE.df[which.min(SSE.df$SSE),]
-average1.df <- data.frame(x = c(-Inf, best_split.df$Mileage), 
-                          y = rep(best_split.df$group1_mean, 2))
-average2.df <- data.frame(x = c(best_split.df$Mileage, Inf), 
-                          y = rep(best_split.df$group2_mean, 2))
+# create datasets with points to plot red lines for the left and right means
+left_mean.df <- data.frame(x = c(-Inf, best_split.df$Mileage), 
+                          y = rep(best_split.df$left_mean, 2))
+right_mean.df <- data.frame(x = c(best_split.df$Mileage, Inf), 
+                          y = rep(best_split.df$right_mean, 2))
 ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) + 
         geom_point() + theme_bw() + 
         geom_vline(xintercept = best_split.df$Mileage) +
-        geom_line(data = average1.df, aes(x = x, y = y/1000), color = "red") +
-        geom_line(data = average2.df, aes(x = x, y = y/1000), color = "red")
+        geom_line(data = left_mean.df, aes(x = x, y = y/1000), color = "red") +
+        geom_line(data = right_mean.df, aes(x = x, y = y/1000), color = "red")
 ```
 
 ![](tutorial_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
@@ -148,11 +174,12 @@ What if we could average together many different regression trees to get a more 
 
 Bagging is short for **b**ootstrap **agg**regation.  This is an ensemble method wherein many different trees are grown using bootstrap samples of the original dataset.  (Bootstrap sampling is just random sampling *with* replacement.)  Predictions of each tree are averaged to create aggregate predictions.  Averaging together creates predictions with lower variance than predictions from a single tree.
 
-Let's create our own bagged model with 4 trees (typically you would grow many more trees).  We'll set aside the first row of our dataset to make predictions on.
+Let's create our own bagged model with 4 trees (typically you would grow many more trees) and limit the trees to a depth of 4 so that we can easily plot them.  We'll set aside the first row of our dataset to make predictions on.
 
 
 
 ```r
+# set aside first row
 (cars_first.df <- cars.df[1,])
 ```
 
@@ -167,17 +194,22 @@ Let's create our own bagged model with 4 trees (typically you would grow many mo
 cars_minus_first.df <- cars.df[-1,]
 n_samples <- nrow(cars_minus_first.df)
 n_trees <- 4
+max_depth <- 4
 predictions <- numeric(n_trees)
 set.seed(235)
 for(i in 1:n_trees){
+    # create bootstrap sample (sample with replacement, same size as original)
     cars_bootstrap.df <- cars_minus_first.df[sample(1:n_samples, n_samples, replace = TRUE),]
+    # grow conditional inference tree - ctree() from party package
     one_tree <- ctree(Price ~ Mileage + Make + Model + Trim + Type + Cylinder + 
                           Liter + Doors + Cruise + Sound + Leather, 
                   data = cars_bootstrap.df, 
-                  controls = ctree_control(maxdepth = 4))
+                  controls = ctree_control(maxdepth = max_depth))
+    # plot tree using options to make tree more compact
     plot(one_tree, type="simple", 
-         inner_panel=node_inner(one_tree, pval = FALSE, id = FALSE), 
-         terminal_panel=node_terminal(one_tree, digits = 0, fill = c("white"), id = FALSE))
+         inner_panel = node_inner(one_tree, pval = FALSE, id = FALSE), 
+         terminal_panel = node_terminal(one_tree, digits = 0, fill = c("white"), id = FALSE))
+    # predict the price of the held out record
     predictions[i] <- predict(one_tree, cars_first.df)
     print(paste("Prediction of single tree for the held out record:", format(predictions[i], digits=0)))
 }
@@ -207,7 +239,7 @@ for(i in 1:n_trees){
 ## [1] "Prediction of single tree for the held out record: 13287"
 ```
 
-You can follow each tree to see why it's making the prediction it is.  To get the aggregate prediction, we average together all 4 values:
+You can follow each tree's splits to see why it's making the prediction it is for the held out record.  To get the aggregate prediction, we average together all 4 values:
 
 
 ```r
@@ -231,15 +263,19 @@ Random forest introduces another element of randomness.  At each split, only som
 
 ```r
 set.seed(903)
+# cforest() from the party package grows a forest of conditional inference trees
+# we use the same number of trees and depth as our previous bagged model
 cars.rf <- cforest(Price ~ Mileage + Make + Model + Trim + Type + Cylinder + 
                           Liter + Doors + Cruise + Sound + Leather, 
                   data = cars_minus_first.df, 
-                  controls = cforest_control(ntree = n_trees, maxdepth = 4))
+                  controls = cforest_control(ntree = n_trees, maxdepth = max_depth))
+# plot each tree grown by cforest()
 for(i in 1:n_trees){
-    one_tree <- get_cTree(cars.rf, i) #see Acknowledgements section
+    # see Acknowledgements section for functions to grab individual trees from cforest()
+    one_tree <- get_cTree(cars.rf, i) 
     plot(one_tree, type="simple", 
-         inner_panel=node_inner(one_tree, pval = FALSE, id = FALSE), 
-         terminal_panel=node_terminal(one_tree, digits = 0, fill = c("white"), id = FALSE))    
+         inner_panel = node_inner(one_tree, pval = FALSE, id = FALSE), 
+         terminal_panel = node_terminal(one_tree, digits = 0, fill = c("white"), id = FALSE))    
 }
 ```
 
@@ -249,7 +285,8 @@ Notice how different each of these trees are!
 
 
 ```r
-predict(cars.rf, cars_first.df, OOB=TRUE)
+# predict the price of the held out record 
+predict(cars.rf, cars_first.df, OOB = FALSE)
 ```
 
 ```
@@ -292,19 +329,72 @@ Now we can predict the price of each OOB sample and calculate a performance metr
 
 
 ```r
-sqrt(sum((predict(one_tree, cars_oob.df) - cars_oob.df$Price)^2)/nrow(cars_oob.df))
+cars_oob.df$prediction <- predict(one_tree, cars_oob.df)
+sqrt(sum((cars_oob.df$prediction - cars_oob.df$Price)^2)/nrow(cars_oob.df))
 ```
 
 ```
 ## [1] 2363.479
 ```
 
-This is the root mean square error for a single tree.  If we had an entire bagged tree model or random forest, we could aggregate the performance metrics of the individual trees to get an estimate of the performance of the forest.  
+This is the root mean square error for a single tree.  Let's say we had a bagged tree model or random forest.  For each record, we could make predictions using only trees for which that record is an out-of-bag sample (i.e. trees that have never seen that record).  If we calculated the root mean square error using these predictions, we would have an estimate of the performance of the entire forest.  
 
 This estimate would be useful if we wanted to compare different models...
 
 ## Tuning Parameters
 
+Our random forest model had 4 trees with max depth of 4.  Number of trees and max depth are examples of tuning parameters.  These were actually bad choices for getting the most accurate predictions, but good choices to save you scrolling past hundreds of trees when we visualized the forest.  In everyday practice, your random forests will have many more trees and be much deeper.
+
+But how do you know if you've chosen "good" tuning parameters?  We can use OOB samples to compare the performance of different random forests!  Other methods we could use are separate training/testing dataset and k-fold cross-validation, which will not be covered in this tutorial.
+
+### mtry
+
+Mtry is the most important parameter to tune.  This is the number or fraction of variables to consider at each split. (Remember that we added randomness to random forest by introducing this constraint so that the same variable wouldn't be split on every time.)  Many implementations of random forest default to 1/3 of your predictor variables.
+
+We can plot the out-of-bag performance of our random forest as we change the mtry parameter.  This kind of plot is called a learning curve.  We want to choose the parameter that gives us the smallest root mean sum of squares error.
+
+
+```r
+# Create a dataframe to store the RMSE for each value of mtry, 1 to 11.
+# When mtry is equal to the number of predictors in the dataset, 11, 
+# random forest is equivalent to a bagged tree model
+learning_curve.df <- data.frame(mtry=1:11, RMSE=0)
+set.seed(294)
+for(i in 1:nrow(learning_curve.df)){
+    mtry <- learning_curve.df$mtry[i]
+    cars.rf <- cforest(Price ~ Mileage + Make + Model + Trim + Type + Cylinder + 
+                          Liter + Doors + Cruise + Sound + Leather, 
+                  data = cars.df, 
+                  controls = cforest_control(mtry = mtry))
+    # get the out-of-bag predictions and calculate RMSE
+    learning_curve.df$RMSE[i] <- sqrt(sum((predict(cars.rf, OOB = TRUE) - cars.df$Price)^2)/nrow(cars.df))
+}
+# plot the results
+ggplot(learning_curve.df, aes(x = mtry, y = RMSE)) + 
+    geom_line() + 
+    geom_point() + 
+    theme_bw()
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+
+```r
+# get the parameter which gave us the smallest error
+learning_curve.df[which.min(learning_curve.df$RMSE),]
+```
+
+```
+##   mtry    RMSE
+## 7    7 1645.02
+```
+
+In our example, we can see that mtry = 7 is giving us the best performance.
+
+### maxdepth
+
+When we were making example trees, we set the maxdepth to 4.  When this parameter isn't set, cforest() defaults to growing the tree until the statistical test isn't significant (remember that cforest uses conditional inference trees).  Other implementations of random forest may have different stopping criteria, such as the number of records in the terminal node, so if you're curious you can read the documentation for your implementation. 
+
+# Summary
 
 # Acknowledgements
 
