@@ -1,22 +1,22 @@
 # Regression Tree Models Tutorial
 Lauren Savage  
 
-*[Regression Trees](#regression-trees)
- *[Example Regression Tree](#example-regression-tree)
- *[Choosing Splits](#choosing-splits)
- *[CART](#cart)
- *[Conditional Inference](#conditional-inference)
- *[Regression Trees vs Linear Regression](#regression-trees-vs-linear-regression)
-*[Random Forest](#random-forest)
- *[Bagged Regression Trees](#bagged-regression-trees)
- *[Random Forest](#random-forest-1)
- *[Out-of-bag (OOB) Samples](#out-of-bag-oob-samples)
- *[Tuning Parameters](#tuning-parameters)
-  *[mtry](#mtry)
-  *[maxdepth](#maxdepth)
-  *[ntree](#ntree)
-*[Summary](#summary)
-*[Acknowledgements](#acknowledgements)
+* [Regression Trees](#regression-trees)
+ * [Example Regression Tree](#example-regression-tree)
+ * [Choosing Splits](#choosing-splits)
+ * [CART](#cart)
+ * [Conditional Inference](#conditional-inference)
+ * [Regression Trees vs Linear Regression](#regression-trees-vs-linear-regression)
+* [Random Forest](#random-forest)
+ * [Bagged Regression Trees](#bagged-regression-trees)
+ * [Random Forest](#random-forest-1)
+ * [Out-of-bag (OOB) Samples](#out-of-bag-oob-samples)
+ * [Tuning Parameters](#tuning-parameters)
+  * [mtry](#mtry)
+  * [maxdepth](#maxdepth)
+  * [ntree](#ntree)
+* [Summary](#summary)
+* [Acknowledgements](#acknowledgements)
 
 # Regression Trees
 
