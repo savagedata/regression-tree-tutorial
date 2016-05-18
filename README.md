@@ -1,13 +1,15 @@
 # Regression Tree Models Tutorial
 Lauren Savage  
 
-Welcome to the regression tree models tutorial!  Even if you've used a tree-based model before like random forest, you might never have thought about all the details that go into building a model.  The goal of this tutorial is to start with the basic building blocks, trees, and work up from there.  Each section will include snippets of R code so that you can get hands-on experience.  Even though we focus on regression problems, these concepts work for classification as well.
+Welcome to the regression tree models tutorial!  Even if you've used a tree-based model before like random forest, you might have never thought about all the details that go into building a model.  The goal of this tutorial is to start with the basic building blocks and work up from there.  Each section will include snippets of R code so that you can get hands-on experience.  Even though we focus on regression problems, these concepts work for classification as well.
+
+*Table of Contents*
 
 * [Regression Trees](#regression-trees)
  * [Example Regression Tree](#example-regression-tree)
  * [Choosing Splits](#choosing-splits)
    - [CART](#cart)
-   - [Conditional Inference](#conditional-inference)
+    * [Conditional Inference](#conditional-inference)
  * [Regression Trees vs Linear Regression](#regression-trees-vs-linear-regression)
 * [Random Forest](#random-forest)
  * [Bagged Regression Trees](#bagged-regression-trees)
@@ -17,9 +19,10 @@ Welcome to the regression tree models tutorial!  Even if you've used a tree-base
 * [Summary](#summary)
 * [Acknowledgements](#acknowledgements)
 
+
 # Regression Trees
 
-Classification models predict categorical outcomes (e.g. success/failure), whereas regression models predict continuous outcomes.
+Classification models predict categorical outcomes (e.g. success/failure), whereas regression models predict continuous variables.
 
 We'll be using an example dataset from Kelly Blue Book 2005 to predict the prices of used cars.  Since price is continuous, this is a regression problem. 
 
@@ -249,7 +252,7 @@ mean(predictions)
 ## [1] 15012.78
 ```
 
-The real price was $17,314, but our prediction was $15,012.  Maybe we can still improve the bagged model...
+Bagged trees are a great improvement over a single tree, but maybe we can still improve the bagged model...
 
 ## Random Forest
 
@@ -299,7 +302,7 @@ Our random forest predicts that the price of the first record will be $16,668.
 
 One advantage of bagged trees and random forest is that each tree is grown using only a subset of the original dataset.  On average, about 63% of records in the original dataset end up in a bootstrap sample.  Because the other 37% (the out-of-bag samples) aren't seen by the tree at all, they can be used to produce performance metric for that tree.
 
-Let's see how this works with a single bagged tree. 
+Let's see how this works with a single tree. 
 
 
 ```r
@@ -350,7 +353,7 @@ But how do you know if you've chosen "good" tuning parameters?  We can use OOB s
 
 Mtry is the most important parameter to tune.  This is the number or fraction of variables to consider at each split. (Remember that we added randomness to random forest by introducing this constraint so that the same variable wouldn't be split on every time.)  Many implementations of random forest default to 1/3 of your predictor variables.
 
-We can plot the out-of-bag performance of our random forest as we change the mtry parameter.  This kind of plot is called a learning curve.  We want to choose the parameter that gives us the smallest root mean sum of squares error.
+We can plot the out-of-bag performance of our random forest as we change the mtry parameter.  This kind of plot is called a learning curve.  We want to choose the parameter that gives us the best performance (smallest root mean sum of squares error).
 
 
 ```r
@@ -393,7 +396,23 @@ In our example, we can see that mtry = 7 is giving us the best performance.
 
 When we were making example trees, we set the maxdepth to 4.  When this parameter isn't set, cforest() defaults to growing the tree until the statistical test isn't significant (remember that cforest uses conditional inference trees).  Other implementations of random forest may have different stopping criteria, such as the number of records in the terminal node, so if you're curious you can read the documentation for your implementation. 
 
+### ntree
+
+Ntree is the number of trees in the forest.  The default for cforest() is 500, which is usually sufficient.  If your model's performance is still getting better after 500 trees, you will want to set ntree higher, but keep in mind that more trees means a longer computation time.
+
 # Summary
+
+Congratulations!  You've gotten to the end of the regression tree models tutorial.  Hopefully you've learned enough to build your own random forests. 
+
+To sum up, there are two types of regression trees - those that make splits based on sum of squares error (CART) and those that make splits based on statistical tests (conditional inference).  
+
+Ensemble methods combine many individual trees to create one better, more stable model.  The first ensemble method we learned about was a bagged trees model, wherein we grew many trees using different bootstrap samples of the data.  
+
+Random forest is an improvement on bagged trees, wherein each tree is grown on a different bootstrap sample (as before), but only a random fraction of the predictor variables are considered for each split in each tree.
+
+We learned about some nifty features of random forest.  For example, we can use the out-of-bag samples to estimate performance of the model.  We also learned about a few parameters we can tune to improve our random forest models, the most important of which is mtry.
+
+Now, go forth and model!
 
 # Acknowledgements
 
@@ -402,3 +421,13 @@ When we were making example trees, we set the maxdepth to 4.  When this paramete
 * Many concepts in this tutorial come from Applied Predictive Modeling by Kjell Johnson and Max Kuhn, which I highly recommend for more in-depth understanding of regression tree models 
 
 * Code for grabbing individual trees from cforest() was taken from Marco Sandri: http://stackoverflow.com/questions/19924402/cforest-prints-empty-tree
+
+# To Do
+
+In future releases of this tutorial, you might see:
+
+* choosing splits for categorical variables
+* variable importance
+* quantile regression forest
+* GBM
+* grid search

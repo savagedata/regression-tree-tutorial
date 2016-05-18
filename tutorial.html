@@ -137,17 +137,19 @@ $(document).ready(function () {
 <li><a href="#tuning-parameters">Tuning Parameters</a><ul>
 <li><a href="#mtry">mtry</a></li>
 <li><a href="#maxdepth">maxdepth</a></li>
+<li><a href="#ntree">ntree</a></li>
 </ul></li>
 </ul></li>
 <li><a href="#summary">Summary</a></li>
 <li><a href="#acknowledgements">Acknowledgements</a></li>
+<li><a href="#to-do">To Do</a></li>
 </ul>
 </div>
 
-<p>Welcome to the regression tree models tutorial! Even if you’ve used a tree-based model before like random forest, you might never have thought about all the details that go into building a model. The goal of this tutorial is to start with the basic building blocks, trees, and work up from there. Each section will include snippets of R code so that you can get hands-on experience. Even though we focus on regression problems, these concepts work for classification as well.</p>
+<p>Welcome to the regression tree models tutorial! Even if you’ve used a tree-based model before like random forest, you might have never thought about all the details that go into building a model. The goal of this tutorial is to start with the basic building blocks and work up from there. Each section will include snippets of R code so that you can get hands-on experience. Even though we focus on regression problems, these concepts work for classification as well.</p>
 <div id="regression-trees" class="section level1">
 <h1>Regression Trees</h1>
-<p>Classification models predict categorical outcomes (e.g. success/failure), whereas regression models predict continuous outcomes.</p>
+<p>Classification models predict categorical outcomes (e.g. success/failure), whereas regression models predict continuous variables.</p>
 <p>We’ll be using an example dataset from Kelly Blue Book 2005 to predict the prices of used cars. Since price is continuous, this is a regression problem.</p>
 <pre class="r"><code>cars.df &lt;- read.csv(&quot;kelly_blue_book_2005.csv&quot;, header = TRUE, stringsAsFactors = TRUE)
 head(cars.df)</code></pre>
@@ -297,7 +299,7 @@ for(i in 1:n_trees){
 <p>You can follow each tree’s splits to see why it’s making the prediction it is for the held out record. To get the aggregate prediction, we average together all 4 values:</p>
 <pre class="r"><code>mean(predictions)</code></pre>
 <pre><code>## [1] 15012.78</code></pre>
-<p>The real price was $17,314, but our prediction was $15,012. Maybe we can still improve the bagged model…</p>
+<p>Bagged trees are a great improvement over a single tree, but maybe we can still improve the bagged model…</p>
 </div>
 <div id="random-forest-1" class="section level2">
 <h2>Random Forest</h2>
@@ -329,7 +331,7 @@ predict(cars.rf, cars_first.df, OOB = FALSE)</code></pre>
 <div id="out-of-bag-oob-samples" class="section level2">
 <h2>Out-of-bag (OOB) Samples</h2>
 <p>One advantage of bagged trees and random forest is that each tree is grown using only a subset of the original dataset. On average, about 63% of records in the original dataset end up in a bootstrap sample. Because the other 37% (the out-of-bag samples) aren’t seen by the tree at all, they can be used to produce performance metric for that tree.</p>
-<p>Let’s see how this works with a single bagged tree.</p>
+<p>Let’s see how this works with a single tree.</p>
 <pre class="r"><code># create bootstrap sample and out-of-bag sample
 n_samples &lt;- nrow(cars.df)
 set.seed(348)
@@ -359,7 +361,7 @@ sqrt(sum((cars_oob.df$prediction - cars_oob.df$Price)^2)/nrow(cars_oob.df))</cod
 <div id="mtry" class="section level3">
 <h3>mtry</h3>
 <p>Mtry is the most important parameter to tune. This is the number or fraction of variables to consider at each split. (Remember that we added randomness to random forest by introducing this constraint so that the same variable wouldn’t be split on every time.) Many implementations of random forest default to 1/3 of your predictor variables.</p>
-<p>We can plot the out-of-bag performance of our random forest as we change the mtry parameter. This kind of plot is called a learning curve. We want to choose the parameter that gives us the smallest root mean sum of squares error.</p>
+<p>We can plot the out-of-bag performance of our random forest as we change the mtry parameter. This kind of plot is called a learning curve. We want to choose the parameter that gives us the best performance (smallest root mean sum of squares error).</p>
 <pre class="r"><code># Create a dataframe to store the RMSE for each value of mtry, 1 to 11.
 # When mtry is equal to the number of predictors in the dataset, 11, 
 # random forest is equivalent to a bagged tree model
@@ -390,10 +392,20 @@ learning_curve.df[which.min(learning_curve.df$RMSE),]</code></pre>
 <h3>maxdepth</h3>
 <p>When we were making example trees, we set the maxdepth to 4. When this parameter isn’t set, cforest() defaults to growing the tree until the statistical test isn’t significant (remember that cforest uses conditional inference trees). Other implementations of random forest may have different stopping criteria, such as the number of records in the terminal node, so if you’re curious you can read the documentation for your implementation.</p>
 </div>
+<div id="ntree" class="section level3">
+<h3>ntree</h3>
+<p>Ntree is the number of trees in the forest. The default for cforest() is 500, which is usually sufficient. If your model’s performance is still getting better after 500 trees, you will want to set ntree higher, but keep in mind that more trees means a longer computation time.</p>
+</div>
 </div>
 </div>
 <div id="summary" class="section level1">
 <h1>Summary</h1>
+<p>Congratulations! You’ve gotten to the end of the regression tree models tutorial. Hopefully you’ve learned enough to build your own random forests.</p>
+<p>To sum up, there are two types of regression trees - those that make splits based on sum of squares error (CART) and those that make splits based on statistical tests (conditional inference).</p>
+<p>Ensemble methods combine many individual trees to create one better, more stable model. The first ensemble method we learned about was a bagged trees model, wherein we grew many trees using different bootstrap samples of the data.</p>
+<p>Random forest is an improvement on bagged trees, wherein each tree is grown on a different bootstrap sample (as before), but only a random fraction of the predictor variables are considered for each split in each tree.</p>
+<p>We learned about some nifty features of random forest. For example, we can use the out-of-bag samples to estimate performance of the model. We also learned about a few parameters we can tune to improve our random forest models, the most important of which is mtry.</p>
+<p>Now, go forth and model!</p>
 </div>
 <div id="acknowledgements" class="section level1">
 <h1>Acknowledgements</h1>
@@ -401,6 +413,17 @@ learning_curve.df[which.min(learning_curve.df$RMSE),]</code></pre>
 <li><p>Data is from Kelly Blue Book and can be found here: <a href="http://www.amstat.org/publications/jse/v16n3/datasets.kuiper.html">http://www.amstat.org/publications/jse/v16n3/datasets.kuiper.html</a></p></li>
 <li><p>Many concepts in this tutorial come from Applied Predictive Modeling by Kjell Johnson and Max Kuhn, which I highly recommend for more in-depth understanding of regression tree models</p></li>
 <li><p>Code for grabbing individual trees from cforest() was taken from Marco Sandri: <a href="http://stackoverflow.com/questions/19924402/cforest-prints-empty-tree">http://stackoverflow.com/questions/19924402/cforest-prints-empty-tree</a></p></li>
+</ul>
+</div>
+<div id="to-do" class="section level1">
+<h1>To Do</h1>
+<p>In future releases of this tutorial, you might see:</p>
+<ul>
+<li>choosing splits for categorical variables</li>
+<li>variable importance</li>
+<li>quantile regression forest</li>
+<li>GBM</li>
+<li>grid search</li>
 </ul>
 </div>
 
