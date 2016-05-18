@@ -7,11 +7,13 @@ output:
         keep_md: true
 ---
 
+Welcome to the regression tree models tutorial!  Even if you've used a tree-based model before like random forest, you might never have thought about all the details that go into building a model.  The goal of this tutorial is to start with the basic building blocks, trees, and work up from there.  Each section will include snippets of R code so that you can get hands-on experience.  Even though we focus on regression problems, these concepts work for classification as well.
+
 # Regression Trees
 
-Classification models predict categorical responses (e.g. success/failure), whereas regression models predict continuous responses.
+Classification models predict categorical outcomes (e.g. success/failure), whereas regression models predict continuous outcomes.
 
-We'll be using an example dataset from Kelly Blue Book 2005 to predict the prices of used cars (a continuous response).
+We'll be using an example dataset from Kelly Blue Book 2005 to predict the prices of used cars.  Since price is continuous, this is a regression problem. 
 
 ```{r, include=FALSE}
 library(ggplot2)
