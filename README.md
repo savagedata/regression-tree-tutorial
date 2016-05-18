@@ -1,9 +1,9 @@
 # Regression Tree Models Tutorial
-Lauren Savage  
+*by Lauren Savage*
 
 Welcome to the regression tree models tutorial!  Even if you've used a tree-based model before like random forest, you might have never thought about all the details that go into building a model.  The goal of this tutorial is to start with the basic building blocks and work up from there.  Each section will include snippets of R code so that you can get hands-on experience.  Even though we focus on regression problems, these concepts work for classification as well.
 
-*Table of Contents*
+**Table of Contents**
 
 * [Regression Trees](#regression-trees)
  * [Example Regression Tree](#example-regression-tree)
@@ -66,7 +66,7 @@ one_tree <- ctree(Price ~ Mileage + Type + Cylinder + Doors + Cruise + Sound + L
 plot(one_tree, inner_panel = node_inner(one_tree, pval = FALSE, id = FALSE))
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-3-1.png)
 
 We can see that the regression tree has successfully split Pontiacs into groups with different prices.  For example, Pontiacs with > 6 cylinders and of type coupe (in Node 10) had prices around $30,000, but Pontiacs with <= 6 cylinders, <= 4 cylinders, and <= 2 doors (in Node 4) had prices around $12,500.  Notice that the tree split twice on the same variable, cylinder, which is okay.
 
@@ -82,6 +82,8 @@ At each node, the tree-building algorithm searches through each variable for the
 
 The best split minimizes the sum of squares error.  This is a way of quanitifying how far the true responses are from the predicted response, the average at each node. The formula for sum of squares error is:
 
+(Note: latex not rendering, replace with image)
+
 $$ SSE = \sum\nolimits_{i \in S_1} (y_i - \bar{y}_1)^2 + \sum\nolimits_{i \in S_2} (y_i - \bar{y}_2)^2$$
 
 Let's look at how CART would choose the best split for mileage on a group of Buick Lacrosses.
@@ -93,7 +95,7 @@ ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) +
         geom_point() + theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-4-1.png)
 
 We can see that there's some relationship between mileage and price, where lower mileage cars tend to be more expensive.
 
@@ -125,7 +127,7 @@ for(i in 1:n_cars){
 ggplot(SSE.df, aes(x = Mileage, y = SSE/1000000)) + geom_line() + theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-5-1.png)
 
 We obtain the minimum sum of squares error when we split on mileage <= 19,467.
 
@@ -147,7 +149,7 @@ ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) +
         geom_line(data = right_mean.df, aes(x = x, y = y/1000), color = "red")
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-6-1.png)
 
 There's a second commonly used method for choosing the best split...
 
@@ -217,25 +219,25 @@ for(i in 1:n_trees){
 }
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-7-1.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15117"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-2.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-7-2.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15729"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-3.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-7-3.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15918"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-4.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-7-4.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 13287"
@@ -281,7 +283,7 @@ for(i in 1:n_trees){
 }
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-10-1.png)<!-- -->![](tutorial_files/figure-html/unnamed-chunk-10-2.png)<!-- -->![](tutorial_files/figure-html/unnamed-chunk-10-3.png)<!-- -->![](tutorial_files/figure-html/unnamed-chunk-10-4.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-10-1.png)![](tutorial_files/figure-html/unnamed-chunk-10-2.png)![](tutorial_files/figure-html/unnamed-chunk-10-3.png)![](tutorial_files/figure-html/unnamed-chunk-10-4.png)
 
 Notice how different each of these trees are! 
 
@@ -378,7 +380,7 @@ ggplot(learning_curve.df, aes(x = mtry, y = RMSE)) +
     theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](tutorial_files/figure-html/unnamed-chunk-14-1.png)
 
 ```r
 # get the parameter which gave us the smallest error
