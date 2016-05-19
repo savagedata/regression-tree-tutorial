@@ -1,5 +1,5 @@
 # Regression Tree Models Tutorial
-*by Lauren Savage*
+Lauren Savage  
 
 Welcome to the regression tree models tutorial!  Even if you've used a tree-based model before like random forest, you might have never thought about all the details that go into building a model.  The goal of this tutorial is to start with the basic building blocks and work up from there.  Each section will include snippets of R code so that you can get hands-on experience.  Even though we focus on regression problems, these concepts work for classification as well.
 
@@ -82,16 +82,14 @@ At each node, the tree-building algorithm searches through each variable for the
 
 The best split minimizes the sum of squares error.  This is a way of quanitifying how far the true responses are from the predicted response, the average at each node. The formula for sum of squares error is:
 
-(Note: latex not rendering, replace with image)
-
 $$ SSE = \sum\nolimits_{i \in S_1} (y_i - \bar{y}_1)^2 + \sum\nolimits_{i \in S_2} (y_i - \bar{y}_2)^2$$
 
-Let's look at how CART would choose the best split for mileage on a group of Buick Lacrosses.
+Let's look at how CART would choose the best split for mileage on a group of Chevrolet AVEOs.
 
 
 ```r
-lacrosse.df <- subset(cars.df, Model == "Lacrosse")
-ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) + 
+aveo.df <- subset(cars.df, Model == "AVEO")
+ggplot(aveo.df, aes(y = Price/1000, x = Mileage)) + 
         geom_point() + theme_bw()
 ```
 
@@ -103,19 +101,19 @@ Let's calculate the sum of squares error for each potential split on mileage.
 
 
 ```r
-n_cars <- nrow(lacrosse.df)
+n_cars <- nrow(aveo.df)
 # The potential splits are all the values of Mileage found in the dataset.
 # Create dataframe to store all potential splits, their associated sum of squares
 # error (SSE), and the predictions for the left and right groups after the split.
-SSE.df <- data.frame(Mileage = sort(lacrosse.df$Mileage), 
+SSE.df <- data.frame(Mileage = sort(aveo.df$Mileage), 
                      SSE = numeric(n_cars), 
                      left_mean = numeric(n_cars), 
                      right_mean = numeric(n_cars))
 for(i in 1:n_cars){
     mileage <- SSE.df$Mileage[i]
     # split cars into left and right groups by mileage
-    left.df <- lacrosse.df[lacrosse.df$Mileage <= mileage,]
-    right.df <- lacrosse.df[lacrosse.df$Mileage > mileage,]
+    left.df <- aveo.df[aveo.df$Mileage <= mileage,]
+    right.df <- aveo.df[aveo.df$Mileage > mileage,]
     # calculate left and right predictions/means
     SSE.df$left_mean[i] <- mean(left.df$Price)
     SSE.df$right_mean[i] <- mean(right.df$Price)
@@ -129,20 +127,28 @@ ggplot(SSE.df, aes(x = Mileage, y = SSE/1000000)) + geom_line() + theme_bw()
 
 ![](tutorial_files/figure-html/unnamed-chunk-5-1.png)
 
-We obtain the minimum sum of squares error when we split on mileage <= 19,467.
+```r
+# the best split is the mileage with the minimum SSE
+(best_split.df <- SSE.df[which.min(SSE.df$SSE),])
+```
+
+```
+##    Mileage      SSE left_mean right_mean
+## 13   13404 36635499  11748.74   10477.37
+```
+
+We obtain the minimum sum of squares error when we split on mileage <= 13,404.
 
 Let's see what this split looks like. The predictions for the two groups are in red.
 
 
 ```r
-# the best split is the mileage with the minimum SSE
-best_split.df <- SSE.df[which.min(SSE.df$SSE),]
 # create datasets with points to plot red lines for the left and right means
 left_mean.df <- data.frame(x = c(-Inf, best_split.df$Mileage), 
                           y = rep(best_split.df$left_mean, 2))
 right_mean.df <- data.frame(x = c(best_split.df$Mileage, Inf), 
                           y = rep(best_split.df$right_mean, 2))
-ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) + 
+ggplot(aveo.df, aes(y = Price/1000, x = Mileage)) + 
         geom_point() + theme_bw() + 
         geom_vline(xintercept = best_split.df$Mileage) +
         geom_line(data = left_mean.df, aes(x = x, y = y/1000), color = "red") +
@@ -151,13 +157,61 @@ ggplot(lacrosse.df, aes(y = Price/1000, x = Mileage)) +
 
 ![](tutorial_files/figure-html/unnamed-chunk-6-1.png)
 
-There's a second commonly used method for choosing the best split...
-
 ### Conditional Inference
 
 (Implemented in the party package.)
 
-This algorithm conducts statistical tests for each possible split and chooses the best split as the one with the smallest p-value.
+There are several drawbacks to CART trees.  The CART algorithm exhaustively searches through every possible split on every variable, so variables with fewer distinct values (i.e. fewer potential split points) are at a disadvantage.  The algorithm also has no concept of a meaningful reduction in error so it has the potential to overfit (CART deals with this by pruning back the tree after it has been grown).
+
+Conditional inference offers the solution to several of these problems by basing the search for splits on statistical hypothesis testing.  This means that predictors with more distinct values are no longer at an advantage and that the tree will naturally stop growing when statistical tests are no longer significant.  
+
+Even though conditional inference fixes several problems in CART, it is not a strictly better algorithm in practice.  Sometimes CART trees perform better, sometimes conditional inference trees perform better.
+
+The conditional inference algorithm first tests the significance of the correlation between each predictor and the response variable.  The predictor with the smallest p-value (most significant result) is selected.  Then statistical tests are conducted for each possible split on that variable and the split with the smallest p-value is chosen.
+
+Let's see what this would look like for our set of AVEO cars.  We'll use a two-sample t-test as a proxy for the statistical test actually used by the conditional inference algorithm. (See https://github.com/christophM/overview-ctrees/blob/master/main.pdf for the test.)
+
+
+```r
+aveo.df <- subset(cars.df, Model == "AVEO")
+n_cars <- nrow(aveo.df)
+# The potential splits are all the values of Mileage found in the dataset.
+# Create dataframe to store all potential splits, their associated p-value for the 
+# two-sample t-test, and the predictions for the left and right groups after the split.
+pvalue.df <- data.frame(Mileage = sort(aveo.df$Mileage), 
+                     pvalue = numeric(n_cars), 
+                     left_mean = numeric(n_cars), 
+                     right_mean = numeric(n_cars))
+# remove splits that would result in less than 2 cars in the left or right groups
+pvalue.df <- pvalue.df[-c(1, n_cars-1, n_cars),]
+for(i in 1:nrow(pvalue.df)){
+    mileage <- pvalue.df$Mileage[i]
+    # split cars into left and right groups by mileage
+    left.df <- aveo.df[aveo.df$Mileage <= mileage,]
+    right.df <- aveo.df[aveo.df$Mileage > mileage,]
+    # calculate left and right predictions/means
+    pvalue.df$left_mean[i] <- mean(left.df$Price)
+    pvalue.df$right_mean[i] <- mean(right.df$Price)
+    # calculate p-value
+    pvalue.df$pvalue[i] <- t.test(left.df$Price, right.df$Price)$p.value
+}
+# plot the p-value for each split on mileage
+ggplot(pvalue.df, aes(x = Mileage, y = pvalue)) + geom_line() + theme_bw()
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-7-1.png)
+
+```r
+# the best split is the mileage with the minimum p-value
+(best_split.df <- pvalue.df[which.min(pvalue.df$pvalue),])
+```
+
+```
+##    Mileage        pvalue left_mean right_mean
+## 13   13404 0.00000528238  11748.74   10477.37
+```
+
+We obtain the minimum p-value when we split on mileage <= 13,404.  In this case, the split is the same as the split chosen by the CART algorithm.
 
 ## Regression Trees vs Linear Regression
 
@@ -219,25 +273,25 @@ for(i in 1:n_trees){
 }
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-8-1.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15117"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-2.png)
+![](tutorial_files/figure-html/unnamed-chunk-8-2.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15729"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-3.png)
+![](tutorial_files/figure-html/unnamed-chunk-8-3.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15918"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-4.png)
+![](tutorial_files/figure-html/unnamed-chunk-8-4.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 13287"
@@ -283,7 +337,7 @@ for(i in 1:n_trees){
 }
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-10-1.png)![](tutorial_files/figure-html/unnamed-chunk-10-2.png)![](tutorial_files/figure-html/unnamed-chunk-10-3.png)![](tutorial_files/figure-html/unnamed-chunk-10-4.png)
+![](tutorial_files/figure-html/unnamed-chunk-11-1.png)![](tutorial_files/figure-html/unnamed-chunk-11-2.png)![](tutorial_files/figure-html/unnamed-chunk-11-3.png)![](tutorial_files/figure-html/unnamed-chunk-11-4.png)
 
 Notice how different each of these trees are! 
 
@@ -362,7 +416,7 @@ We can plot the out-of-bag performance of our random forest as we change the mtr
 # Create a dataframe to store the RMSE for each value of mtry, 1 to 11.
 # When mtry is equal to the number of predictors in the dataset, 11, 
 # random forest is equivalent to a bagged tree model
-learning_curve.df <- data.frame(mtry=1:11, RMSE=0)
+learning_curve.df <- data.frame(mtry = 1:11, RMSE = 0)
 set.seed(294)
 for(i in 1:nrow(learning_curve.df)){
     mtry <- learning_curve.df$mtry[i]
@@ -380,7 +434,7 @@ ggplot(learning_curve.df, aes(x = mtry, y = RMSE)) +
     theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-14-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-15-1.png)
 
 ```r
 # get the parameter which gave us the smallest error
@@ -429,6 +483,7 @@ Now, go forth and model!
 In future releases of this tutorial, you might see:
 
 * choosing splits for categorical variables
+* surrogate splits
 * variable importance
 * quantile regression forest
 * GBM
