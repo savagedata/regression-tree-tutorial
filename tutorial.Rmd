@@ -54,7 +54,9 @@ At each node, the tree-building algorithm searches through each variable for the
 
 The best split minimizes the sum of squares error.  This is a way of quanitifying how far the true responses are from the predicted response, the average at each node. The formula for sum of squares error is:
 
-$$ SSE = \sum\nolimits_{i \in S_1} (y_i - \bar{y}_1)^2 + \sum\nolimits_{i \in S_2} (y_i - \bar{y}_2)^2$$
+```{r, out.width = 300, fig.retina = NULL, echo=FALSE, fig.align='center'}
+knitr::include_graphics("tutorial_files/sse_formula.png")
+```
 
 Let's look at how CART would choose the best split for mileage on a group of Chevrolet AVEOs.
 
@@ -156,6 +158,7 @@ ggplot(pvalue.df, aes(x = Mileage, y = pvalue)) + geom_line() + theme_bw()
 ```
 
 We obtain the minimum p-value when we split on mileage <= 13,404.  In this case, the split is the same as the split chosen by the CART algorithm.
+
 
 ## Regression Trees vs Linear Regression
 
@@ -337,6 +340,7 @@ We can plot the out-of-bag performance of our random forest as we change the mtr
 # Create a dataframe to store the RMSE for each value of mtry, 1 to 11.
 # When mtry is equal to the number of predictors in the dataset, 11, 
 # random forest is equivalent to a bagged tree model
+temp<-proc.time()
 learning_curve.df <- data.frame(mtry = 1:11, RMSE = 0)
 set.seed(294)
 for(i in 1:nrow(learning_curve.df)){
@@ -355,6 +359,7 @@ ggplot(learning_curve.df, aes(x = mtry, y = RMSE)) +
     theme_bw()
 # get the parameter which gave us the smallest error
 learning_curve.df[which.min(learning_curve.df$RMSE),]
+proc.time()-temp
 ```
 
 In our example, we can see that mtry = 7 is giving us the best performance.
@@ -388,6 +393,8 @@ Now, go forth and model!
 * Many concepts in this tutorial come from Applied Predictive Modeling by Kjell Johnson and Max Kuhn, which I highly recommend for more in-depth understanding of regression tree models 
 
 * Code for grabbing individual trees from cforest() was taken from Marco Sandri: http://stackoverflow.com/questions/19924402/cforest-prints-empty-tree
+
+* Thanks to the Data Science Book Club for being my guinea pigs and suggesting improvements  
 
 # To Do
 

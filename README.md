@@ -82,7 +82,7 @@ At each node, the tree-building algorithm searches through each variable for the
 
 The best split minimizes the sum of squares error.  This is a way of quanitifying how far the true responses are from the predicted response, the average at each node. The formula for sum of squares error is:
 
-$$ SSE = \sum\nolimits_{i \in S_1} (y_i - \bar{y}_1)^2 + \sum\nolimits_{i \in S_2} (y_i - \bar{y}_2)^2$$
+<img src="tutorial_files/sse_formula.png" width="300" style="display: block; margin: auto;" />
 
 Let's look at how CART would choose the best split for mileage on a group of Chevrolet AVEOs.
 
@@ -93,7 +93,7 @@ ggplot(aveo.df, aes(y = Price/1000, x = Mileage)) +
         geom_point() + theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-4-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-5-1.png)
 
 We can see that there's some relationship between mileage and price, where lower mileage cars tend to be more expensive.
 
@@ -125,7 +125,7 @@ for(i in 1:n_cars){
 ggplot(SSE.df, aes(x = Mileage, y = SSE/1000000)) + geom_line() + theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-5-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-6-1.png)
 
 ```r
 # the best split is the mileage with the minimum SSE
@@ -155,7 +155,7 @@ ggplot(aveo.df, aes(y = Price/1000, x = Mileage)) +
         geom_line(data = right_mean.df, aes(x = x, y = y/1000), color = "red")
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-6-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-7-1.png)
 
 ### Conditional Inference
 
@@ -199,7 +199,7 @@ for(i in 1:nrow(pvalue.df)){
 ggplot(pvalue.df, aes(x = Mileage, y = pvalue)) + geom_line() + theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-7-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-8-1.png)
 
 ```r
 # the best split is the mileage with the minimum p-value
@@ -212,6 +212,7 @@ ggplot(pvalue.df, aes(x = Mileage, y = pvalue)) + geom_line() + theme_bw()
 ```
 
 We obtain the minimum p-value when we split on mileage <= 13,404.  In this case, the split is the same as the split chosen by the CART algorithm.
+
 
 ## Regression Trees vs Linear Regression
 
@@ -273,25 +274,25 @@ for(i in 1:n_trees){
 }
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-8-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-9-1.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15117"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-8-2.png)
+![](tutorial_files/figure-html/unnamed-chunk-9-2.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15729"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-8-3.png)
+![](tutorial_files/figure-html/unnamed-chunk-9-3.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 15918"
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-8-4.png)
+![](tutorial_files/figure-html/unnamed-chunk-9-4.png)
 
 ```
 ## [1] "Prediction of single tree for the held out record: 13287"
@@ -337,7 +338,7 @@ for(i in 1:n_trees){
 }
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-11-1.png)![](tutorial_files/figure-html/unnamed-chunk-11-2.png)![](tutorial_files/figure-html/unnamed-chunk-11-3.png)![](tutorial_files/figure-html/unnamed-chunk-11-4.png)
+![](tutorial_files/figure-html/unnamed-chunk-12-1.png)![](tutorial_files/figure-html/unnamed-chunk-12-2.png)![](tutorial_files/figure-html/unnamed-chunk-12-3.png)![](tutorial_files/figure-html/unnamed-chunk-12-4.png)
 
 Notice how different each of these trees are! 
 
@@ -416,6 +417,7 @@ We can plot the out-of-bag performance of our random forest as we change the mtr
 # Create a dataframe to store the RMSE for each value of mtry, 1 to 11.
 # When mtry is equal to the number of predictors in the dataset, 11, 
 # random forest is equivalent to a bagged tree model
+temp<-proc.time()
 learning_curve.df <- data.frame(mtry = 1:11, RMSE = 0)
 set.seed(294)
 for(i in 1:nrow(learning_curve.df)){
@@ -434,7 +436,7 @@ ggplot(learning_curve.df, aes(x = mtry, y = RMSE)) +
     theme_bw()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-15-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-16-1.png)
 
 ```r
 # get the parameter which gave us the smallest error
@@ -444,6 +446,15 @@ learning_curve.df[which.min(learning_curve.df$RMSE),]
 ```
 ##   mtry    RMSE
 ## 7    7 1645.02
+```
+
+```r
+proc.time()-temp
+```
+
+```
+##    user  system elapsed 
+##  64.386   0.340  64.762
 ```
 
 In our example, we can see that mtry = 7 is giving us the best performance.
@@ -477,6 +488,8 @@ Now, go forth and model!
 * Many concepts in this tutorial come from Applied Predictive Modeling by Kjell Johnson and Max Kuhn, which I highly recommend for more in-depth understanding of regression tree models 
 
 * Code for grabbing individual trees from cforest() was taken from Marco Sandri: http://stackoverflow.com/questions/19924402/cforest-prints-empty-tree
+
+* Thanks to the Data Science Book Club for being my guinea pigs and suggesting improvements  
 
 # To Do
 
